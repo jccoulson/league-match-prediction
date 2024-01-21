@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
+  <link href="{% static 'home/results.css' %}" rel="stylesheet">
+</head>
+<body>
+  <div class="test">
+    <div class="search-container">
+      <a href ="{% url 'home' %}">
+      <h1 class="title">LeaguePred</h1>
+    </a>
+      <div class="search-bar">
+        <form method="get" action="{% url 'search_results' %}">
+          <select name="region">
+            <option value="na1">na</option>
+            <option value="euw1">euw</option>
+            <option value="eun1">eune</option>
+            <option value="kr">kr</option>
+          </select>
+          <input type="text" placeholder="Search..." name="q">
+          <button type="submit" id = "searchButton">Search</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<div class="square">
+  <p>We predict that your probability for a<br>
+    {{ game_outcome }}<br>
+  is<br>
+  {{ outcome_odds }}%
+  </p>
+</div>
+
+
+  <div class="container">
+    <div class="column-left">
+      <div class="circle">
+        <p class="circle-text">{{player1_wr}}</p>
+        <img src="{% static player1_image %}" alt="Player 1">
+      </div>
+      <div class="circle">
+        <p class="circle-text">{{player2_wr}}</p>
+        <img src="{% static player2_image %}" alt="Player 2">
+      </div>
+      <div class="circle">
+        <p class="circle-text">{{player3_wr}}</p>
+        <img src="{% static player3_image %}" alt="Player 3">
+      </div>
+      <div class="circle">
+        <p class="circle-text">{{player4_wr}}</p>
+        <img src="{% static player4_image %}" alt="Player 4">
+      </div>
+      <div class="circle">
+        <p class="circle-text">{{player5_wr}}</p>
+        <img src="{% static player5_image %}" alt="Player 5">
+      </div>
+    </div>
+    <div class="rectangle-column-left">
+      <div class="rectangle-left">
+        <p>{{player1_name}}</p>
+      </div>
+      <div class="rectangle-left">
+        <p>{{player2_name}}</p>
+      </div>
+      <div class="rectangle-left">
+        <p>{{player3_name}}</p>
+      </div>
+      <div class="rectangle-left">
+        <p>{{player4_name}}</p>
+      </div>
+      <div class="rectangle-left">
+        <p>{{player5_name}}</p>
+      </div>
+    </div>
+    <div class="rectangle-column-right">
+      <div class="rectangle-right">
+        <p>{{player6_name}}</p>
+      </div>
+      <div class="rectangle-right">
+        <p>{{player7_name}}</p>
+      </div>
+      <div class="rectangle-right">
+        <p>{{player8_name}}</p>
+      </div>
+      <div class="rectangle-right">
+        <p>{{player9_name}}</p>
+      </div>
+      <div class="rectangle-right">
+        <p>{{player10_name}}</p>
+      </div>
+    </div>
+  <div class="column-right">
+    <div class="circle">
+      <p class="circle-text">{{player6_wr}}</p>
+      <img src="{% static player6_image %}" alt="Player 6">
+    </div>
+    <div class="circle">
+      <p class="circle-text">{{player7_wr}}</p>
+      <img src="{% static player7_image %}" alt="Player 7">
+    </div>
+    <div class="circle">
+      <p class="circle-text">{{player8_wr}}</p>
+      <img src="{% static player8_image %}" alt="Player 8">
+    </div>
+    <div class="circle">
+      <p class="circle-text">{{player9_wr}}</p>
+      <img src="{% static player9_image %}" alt="Player 9">
+    </div>
+    <div class="circle">
+      <p class="circle-text">{{player10_wr}}</p>
+      <img src="{% static player10_image %}" alt="Player 10">
+    </div>
+  </div>
+
+
+
+</div>
+
+</body>
+</html>

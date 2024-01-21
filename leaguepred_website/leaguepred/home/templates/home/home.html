@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+{% load static %}
+<link href="{% static 'home/home.css' %}" rel="stylesheet">
+
+<html>
+
+<body>
+<div class="center-container">
+  <div class="search-container">
+    <h1 class="title">LeaguePred</h1>
+    <div class="search-bar">
+        <form method="get" action="{% url 'search_results' %}">
+            <select name="region">
+              <option value="">Select region</option>
+              <option value="na1">na1</option>
+              <option value="euw1">euw</option>
+              <option value="eun1">eune</option>
+              <option value="kr">kr</option>
+            </select>
+            <input type="text" placeholder="Search..." name="q">
+
+            <button type="submit" id = "search_button">Search</button>
+        </form>
+  <div class = error_div>
+        {% if error %}
+         {{error}}
+        {%endif%}
+  </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="bear_gif" style="display: none;">
+    <img src="{% static 'gifs/walk-polar-bear.gif' %}">
+</div>
+
+
+  <script>
+      document.getElementById('search_button').addEventListener('click', function() {
+          document.getElementById('bear_gif').style.display = 'block';
+      });
+  </script>
+</body>
+</html>
