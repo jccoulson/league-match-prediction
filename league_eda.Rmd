@@ -1,0 +1,220 @@
+---
+title: "capstone_eda"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+```{r}
+library(tibble)
+library(tidyverse)
+
+#read in csv
+df <-read.csv("diamond_preclean.csv")
+
+
+#if r complains about \0use linux command to clean file: sed -i 's/\x0//g' file.csv, this only happened once not sure why
+
+
+#turn dataframe into tibble
+league_data <- as_tibble(df)
+league_data
+
+
+#select kda columns frome every player
+kda_columns <-select(league_data, ends_with("kda"))
+
+#kda came with two dots, second one needs to be removed
+rm_dot <- function(x){
+  str_replace(x, "^([0-9]+\\.[0-9]+)\\.", "\\1")
+}
+
+#call remove dot function on all columns
+kda_columns <- kda_columns %>%
+    mutate_all(rm_dot)
+
+
+#remove kda columns in original dataset
+league_data <- league_data %>%
+  select(-ends_with("kda"))
+
+#add back in columns with correct num of .
+league_data <- bind_cols(league_data, kda_columns)
+
+
+
+#create function to calculate mean of columns
+column_mean <- function(x)
+{
+  nums <- suppressWarnings(as.numeric(as.character(x))) #supressing warnings because as.numeric is inserting N/As on the cells filled with "None"
+  m <- mean(nums, na.rm = T)
+  return(m)
+}
+  
+#league_data
+
+#call function on all kda columns
+kda.col.results<- league_data %>%
+  summarise(across(ends_with("kda"), column_mean))
+
+overall.wr.col.results <-  league_data %>%
+  summarise(across(ends_with("overall.wr"), column_mean))
+
+total.games.col.results <-  league_data %>%
+  summarise(across(ends_with("total.games"), column_mean))
+
+champ.games.col.results <-  league_data %>%
+  summarise(across(ends_with("champ.games"), column_mean))
+
+champ.wr.col.results <-  league_data %>%
+  summarise(across(ends_with("champ.wr"), column_mean))
+
+cs.col.results <-  league_data %>%
+  summarise(across(ends_with(".cs"), column_mean))
+
+mastery.col.results <-  league_data %>%
+  summarise(across(ends_with(".mastery"), column_mean))
+
+kda.mean <-rowMeans(kda.col.results)
+total.games.mean <-rowMeans(total.games.col.results)
+overall.wr.mean <- rowMeans(overall.wr.col.results)
+champ.games.mean <- rowMeans(champ.games.col.results)
+champ.wr.mean <- rowMeans(champ.wr.col.results)
+cs.mean <- rowMeans(cs.col.results)
+mastery.mean <- rowMeans(mastery.col.results)
+
+#standardize data
+league_data <- mutate(league_data, across(ends_with("kda"), ~str_replace(., "Perfect", ""))) %>%
+  mutate(across(ends_with("overall.wr"), ~str_replace(., "None_unranked", "None"))) %>%
+  mutate(across(ends_with("total.games"), ~str_replace(., "None_unranked", "0"))) %>%
+  mutate(across(ends_with("mastery"), ~str_replace(., "n/a", "0")))  %>%#when no mastery they have 0
+  mutate(across(ends_with("mastery"), ~str_replace(., "ng", "0")))
+  
+
+
+
+                
+#keep only unique rows incase there are duplicates. Should only be a few duplicates max anyway
+league_data <- league_data %>% distinct()
+
+#store tibble pre adding in averages for visualization
+raw_data <- league_data
+
+#now filling in averages if they dont have games on that champ
+league_data <- 
+  mutate(league_data, across(ends_with("kda"), ~str_replace(., "None", as.character(sprintf("%.2f", kda.mean))))) %>%
+  mutate(across(ends_with("overall.wr"), ~str_replace(., "None", as.character(sprintf("%.2f", overall.wr.mean))))) %>%
+  mutate(across(ends_with("total.games"), ~str_replace(., "None", as.character(sprintf("%.2f", total.games.mean))))) %>%
+  mutate(across(ends_with("champ.games"), ~str_replace(., "None", "0"))) %>% #makes more sense for this to be 0 games than mean
+  mutate(across(ends_with("champ.wr"), ~str_replace(., "None", as.character(sprintf("%.2f", champ.wr.mean))))) %>%
+  mutate(across(ends_with("cs"), ~str_replace(., "None", as.character(sprintf("%.2f", cs.mean)))))
+
+
+league_data
+
+write_csv(league_data, "example.csv")
+                                          
+
+overall.wr.mean
+champ.wr.mean
+total.games.mean
+champ.games.mean
+kda.mean
+cs.mean
+
+
+```
+
+
+
+```{r}
+#need to use the original data with the nones and just graph without it? right now its skewing to the median values on graph@@
+raw_data <- pivot_longer(raw_data, cols = -Win.Loss, names_to = c("Player", ".value"),
+                            names_pattern = "Player([0-9]+).(.*)")
+
+#remove rows that have none in it for visualization
+league_long <- raw_data[raw_data$kda!="None", ]
+
+league_long
+#the case of overall winrate being none can happen even if other info wasn't found, so remove those rows too
+league_long <- league_long[league_long$overall.wr!="None", ]
+
+
+
+
+
+league_long <-mutate(league_long, kda = as.numeric(kda)) %>%
+  mutate(overall.wr = as.numeric(overall.wr)) %>%
+  mutate(total.games = as.numeric(total.games)) %>%
+  mutate(champ.games = as.numeric(champ.games)) %>%
+  mutate(champ.wr = as.numeric(champ.wr)) %>%
+  mutate(overall.wr = as.numeric(overall.wr)) %>%
+  mutate(mastery = as.numeric(mastery))
+
+league_long
+
+
+ggplot(league_long, aes(x = kda)) +
+   geom_histogram(binwidth = .5)  +
+   geom_vline(aes(xintercept = mean(kda)),
+             color = "red", size = 1) 
+
+ggplot(league_long, aes(x = overall.wr)) +
+   geom_histogram(binwidth = 1)  +
+   geom_vline(aes(xintercept = mean(overall.wr)),
+             color = "red", size = 1) 
+
+
+ggplot(league_long, aes(x = champ.wr)) +
+  geom_histogram(binwidth = 1) +
+  geom_vline(aes(xintercept = mean(champ.wr)), color = "red", size = .1) 
+
+ggplot(league_long, aes(x = total.games)) +
+   geom_histogram(binwidth = 10)  +
+   geom_vline(aes(xintercept = mean(total.games)),
+             color = "red", size = 1) 
+
+ggplot(league_long, aes(x = champ.games)) +
+   geom_histogram(binwidth = 5)  +
+   geom_vline(aes(xintercept = mean(champ.games)),
+             color = "red", size = 1) 
+
+ggplot(league_long, aes(x = mastery, y = champ.wr)) +
+  geom_point(aes(color = champ.name), alpha = 0.7)+
+  theme(legend.position = "none") 
+
+ggplot(league_long, aes(x = champ.wr)) +
+  geom_density(aes(fill = champ.name), alpha = 0.5) +
+  xlab("Champion Winrate %")+
+  theme(legend.position = "none") 
+ 
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = champ.wr, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = kda, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = total.games, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = champ.games, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = overall.wr, x=as.factor(Win.Loss)), alpha = 0.2)
+
+
+
+
+
+
+
+
+```
