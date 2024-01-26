@@ -19,14 +19,14 @@ Check the finished website with http://LeaguePred.net
 
 ## Dependencies
 
-- R==4.3.2
-- Django==3.0.9
-- scikit-learn==1.2.2
-- joblib==1.2.0
-- requests==2.22.0
-- beautifulsoup4==4.11.2
-- numpy==1.24.2
-- pandas==1.5.3
+- R>=4.3.2
+- Django>=3.0.9
+- scikit-learn>=1.2.2
+- joblib>=1.2.0
+- requests>=2.22.0
+- beautifulsoup4>=4.11.2
+- numpy>=1.24.2
+- pandas>=1.5.3
 - gunicorn
 - whitenoise
 - lxml
