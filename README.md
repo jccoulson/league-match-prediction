@@ -1,7 +1,7 @@
-## LeaguePred
+# LeaguePred
 This project predicts the outcome of a League of Legends game by analyzing player statistics. The steps involved in the project are data collection with RIOT API and web scraping, data cleaning, exploratory data analysis, and machine learning with random forest to predict outcome of games. The model is integrated into a Django web application making it possible look up live game participants and display odds on their chance of winning.
 
-##Project Components
+## Project Components
 - 1 csv of preclean diamond data
 - 3 csvs of cleaned data
 - Data Collection(`data_collection.py`)
