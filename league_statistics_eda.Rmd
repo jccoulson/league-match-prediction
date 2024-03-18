@@ -1,0 +1,290 @@
+---
+title: "Exploratory Data Analysis of League of Legends Player Statistics and Game Outcome"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+## The first step is to clean the data. The data comes in wide format, it was from web scraping. Need to deal with special chars from the scraping. Also replacing missing values with averages.
+```{r}
+library(tibble)
+library(tidyverse)
+
+#read in csv
+df <-read.csv("diamond_preclean.csv")
+
+
+#if r complains about \0use linux command to clean file: sed -i 's/\x0//g' file.csv, this only happened once not sure why
+
+#turn dataframe into tibble
+league_data <- as_tibble(df)
+head(league_data)
+
+
+#select kda columns frome every player
+kda_columns <-select(league_data, ends_with("kda"))
+
+#kda came with two dots, second one needs to be removed
+rm_dot <- function(x){
+  str_replace(x, "^([0-9]+\\.[0-9]+)\\.", "\\1")
+}
+
+#call remove dot function on all columns
+kda_columns <- kda_columns %>%
+    mutate_all(rm_dot)
+
+
+#remove kda columns in original dataset
+league_data <- league_data %>%
+  select(-ends_with("kda"))
+
+#add back in columns with correct num of .
+league_data <- bind_cols(league_data, kda_columns)
+
+
+
+#create function to calculate mean of columns
+column_mean <- function(x)
+{
+  nums <- suppressWarnings(as.numeric(as.character(x))) #supressing warnings because as.numeric is inserting N/As on the cells filled with "None"
+  m <- mean(nums, na.rm = T)
+  return(m)
+}
+  
+#league_data
+
+#call function on all kda columns
+kda.col.results<- league_data %>%
+  summarise(across(ends_with("kda"), column_mean))
+
+overall.wr.col.results <-  league_data %>%
+  summarise(across(ends_with("overall.wr"), column_mean))
+
+total.games.col.results <-  league_data %>%
+  summarise(across(ends_with("total.games"), column_mean))
+
+champ.games.col.results <-  league_data %>%
+  summarise(across(ends_with("champ.games"), column_mean))
+
+champ.wr.col.results <-  league_data %>%
+  summarise(across(ends_with("champ.wr"), column_mean))
+
+cs.col.results <-  league_data %>%
+  summarise(across(ends_with(".cs"), column_mean))
+
+mastery.col.results <-  league_data %>%
+  summarise(across(ends_with(".mastery"), column_mean))
+
+kda.mean <-rowMeans(kda.col.results)
+total.games.mean <-rowMeans(total.games.col.results)
+overall.wr.mean <- rowMeans(overall.wr.col.results)
+champ.games.mean <- rowMeans(champ.games.col.results)
+champ.wr.mean <- rowMeans(champ.wr.col.results)
+cs.mean <- rowMeans(cs.col.results)
+mastery.mean <- rowMeans(mastery.col.results)
+
+#standardize data
+league_data <- mutate(league_data, across(ends_with("kda"), ~str_replace(., "Perfect", ""))) %>%
+  mutate(across(ends_with("overall.wr"), ~str_replace(., "None_unranked", "None"))) %>%
+  mutate(across(ends_with("total.games"), ~str_replace(., "None_unranked", "0"))) %>%
+  mutate(across(ends_with("mastery"), ~str_replace(., "n/a", "0")))  %>%#when no mastery they have 0
+  mutate(across(ends_with("mastery"), ~str_replace(., "ng", "0")))
+  
+
+
+
+                
+#keep only unique rows incase there are duplicates. Should only be a few duplicates max anyway
+league_data <- league_data %>% distinct()
+
+#store tibble pre adding in averages for visualization
+raw_data <- league_data
+
+#now filling in averages if they dont have games on that champ
+league_data <- 
+  mutate(league_data, across(ends_with("kda"), ~str_replace(., "None", as.character(sprintf("%.2f", kda.mean))))) %>%
+  mutate(across(ends_with("overall.wr"), ~str_replace(., "None", as.character(sprintf("%.2f", overall.wr.mean))))) %>%
+  mutate(across(ends_with("total.games"), ~str_replace(., "None", as.character(sprintf("%.2f", total.games.mean))))) %>%
+  mutate(across(ends_with("champ.games"), ~str_replace(., "None", "0"))) %>% #makes more sense for this to be 0 games than mean
+  mutate(across(ends_with("champ.wr"), ~str_replace(., "None", as.character(sprintf("%.2f", champ.wr.mean))))) %>%
+  mutate(across(ends_with("cs"), ~str_replace(., "None", as.character(sprintf("%.2f", cs.mean)))))
+yrsm
+
+head(league_data)
+
+write_csv(league_data, "example.csv")
+                                          
+sprintf("%f is overall winrate mean",overall.wr.mean)
+sprintf("%f is champ winrate mean",champ.wr.mean)
+sprintf("%f is total games mean",total.games.mean)
+sprintf("%f is champ games mean",champ.games.mean)
+sprintf("%f is champ kda mean",kda.mean)
+sprintf("%f is cs winrate mean",cs.mean)
+
+
+```
+
+## Fixing format
+ - to make rows usable for visualizations, to achieve this pivot longer
+ - turning all the columns to numeric
+ - making sure there are only unique rows
+```{r}
+raw_data <- pivot_longer(raw_data, cols = -Win.Loss, names_to = c("Player", ".value"),
+                            names_pattern = "Player([0-9]+).(.*)")
+
+#remove rows that have none in it for visualization
+league_long <- raw_data[raw_data$kda!="None", ]
+
+
+#the case of overall winrate being none can happen even if other info wasn't found, so remove those rows too
+league_long <- league_long[league_long$overall.wr!="None", ]
+
+league_long$overall.wr <- as.integer(league_long$overall.wr)
+league_long$total.games <- as.integer(league_long$total.games)
+league_long$champ.games <- as.integer(league_long$champ.games)
+league_long$champ.wr <- as.integer(league_long$champ.wr)
+league_long$kda <- as.numeric(league_long$kda)
+head(league_long)
+league_long <- unique(league_long)
+```
+## Creating Correlation matrix
+ - Encoding win loss column to numeric 1 or 0
+ - creating correlation matrix to see variables that are correlated with each other and see if indivudla player statistics before combining into team statistics are correlated with target var
+```{r}
+league_long_corr <- league_long
+league_long_corr$WinLossNumeric <- ifelse(league_long$Win.Loss == "win", 1, 0)
+
+# Correlation matrix for numerical features
+numeric_cols <- select(league_long_corr, where(is.numeric))
+cor_matrix <- cor(numeric_cols, use = "complete.obs")
+cor_matrix
+corrplot::corrplot(cor_matrix, method = "square")
+```
+
+
+## Creating visuals of dependent variables
+ - Creating histograms with a line to show average value
+ - Creating density plot of champ winrates
+ - Boxplots are good information to see split between win and loss for values of independent var
+```{r}
+
+#creation of histograms
+ggplot(league_long, aes(x = kda)) +
+   geom_histogram(binwidth = .5)  +
+   geom_vline(aes(xintercept = mean(kda)),
+             color = "red", linewidth = 1) 
+
+ggplot(league_long, aes(x = overall.wr)) +
+   geom_histogram(binwidth = 1)  +
+   geom_vline(aes(xintercept = mean(overall.wr)),
+             color = "red", linewidth = 1) 
+
+
+ggplot(league_long, aes(x = champ.wr)) +
+  geom_histogram(binwidth = 1) +
+  geom_vline(aes(xintercept = mean(champ.wr)), color = "red", linewidth = .1) 
+
+ggplot(league_long, aes(x = total.games)) +
+   geom_histogram(binwidth = 10)  +
+   geom_vline(aes(xintercept = mean(total.games)),
+             color = "red", linewidth = 1) 
+
+ggplot(league_long, aes(x = champ.games)) +
+   geom_histogram(binwidth = 5)  +
+   geom_vline(aes(xintercept = mean(champ.games)),
+             color = "red", linewidth = 1) 
+
+
+#density plot of champion winrates
+ggplot(league_long, aes(x = champ.wr)) +
+  geom_density(aes(fill = champ.name), alpha = 0.5) +
+  xlab("Champion Winrate %")+
+  theme(legend.position = "none") 
+ 
+#boxplots for each dependent against whether it was a win or loss
+ggplot(league_long) + 
+  geom_boxplot(aes(y = champ.wr, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = kda, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = total.games, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = champ.games, x=as.factor(Win.Loss)), alpha = 0.2)
+
+ggplot(league_long) + 
+  geom_boxplot(aes(y = overall.wr, x=as.factor(Win.Loss)), alpha = 0.2)
+
+```
+
+## Correlation Scatter
+ - Creating correlation scatter of KDA and champion winrate
+ - These variables should be correlated and showed some correlation in corr matrix
+ - want to see exactly how correlated they are and added a fit line
+```{r}
+
+wr_vis_data <- subset(league_long, champ.wr < 100 & champ.wr > 0) #taking out outliers for vis
+
+ggplot(wr_vis_data, aes(x = kda, y = champ.wr)) + 
+  geom_point(aes(color = kda), size = 3, alpha = 0.6) +  #color is according to kda 
+  geom_smooth(method = "lm", color = "purple4",se = FALSE, linetype = "solid", linewidth = 1.1) +  #regression line to fit to scatter
+  scale_color_gradient(low = "khaki1", high = "coral4") + #color gradient
+  ylim(0, 100) +
+  xlim(0, 10) +
+  theme(legend.position = "none") + 
+  labs(title = "Scatter Plot of Champion KDA vs. Champion Win Rate", 
+       x = "Champion KDA", 
+       y = "Champion Win Rate (%)")
+```
+
+
+
+
+## 2d Visualization of team statistics
+ - reading in csv with team statistics that will be used for prediction
+ - using tsne to see the groupings of the classes
+ - seeing how effective the features are for predicting
+```{r}
+library(Rtsne)
+
+team_df <-read.csv("team_averages_goldset.csv")
+head(team_df)
+
+
+#double checking theres no duplicates in both dfs
+features <- team_df %>% select(-Win.Loss)
+features_no_dup <- features[!duplicated(features), ]
+
+#make sure labels are in same order
+labels_no_dup <- team_df$Win.Loss[!duplicated(features)]
+
+#use tsne
+tsne_result <- Rtsne(as.matrix(features_no_dup), dims = 2, perplexity = 30, verbose = TRUE)
+
+#put labels on the tsne results
+tsne_data <- data.frame(X = tsne_result$Y[,1], Y = tsne_result$Y[,2], Label = labels_no_dup)
+
+#plot
+ggplot(tsne_data, aes(x = X, y = Y, color = Label)) +
+  geom_point(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "t-SNE Projection of Team Data", x = "Dim 1", y = "Dim 2") +
+  scale_color_manual(values = c("win" = "blue", "loss" = "red"))
+
+```
+
+
+# Conclusion of eda
+- From this eda we can see variables such as champ wr, total games, champ games, and kda have more correlation with win or loss than the other vars
+- From the visualizations in different dimensions, we can see the classes are seperable
+   - Even though there are lots of seperable chunks there are still lots of overlapping samples
+   - To best deal with the patterns in the data a good predictor to use will be random forest since it is decision tree based and can find complex non linear relationships. It will be able to map the more complex relationship between features and the target variable
+
+
