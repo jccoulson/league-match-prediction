@@ -3,6 +3,7 @@ This project predicts the outcome of a League of Legends game by analyzing playe
 
 ## Project Components
 - 1 csv of preclean diamond data
+- 1 csv of diamond team statistics data
 - 3 csvs of cleaned data
 - Data Collection(`data_collection.py`)
   - Uses the RIOT API and web scraping via Python's Beautiful Soup, collects random game statistics and player data in those games and saves as csv
@@ -13,8 +14,17 @@ This project predicts the outcome of a League of Legends game by analyzing playe
 - Web Application (`/leaguepred_website`)
   - web applciation built with Django, integrates the prediction model and allows users to look up a player and displays odds of winning and basic game information
 
-Due to the large update Riot Games did with account name changes implemented after the website went live, the website does not work for any user that is not with a name with the default #na1
-Check the finished website with http://LeaguePred.net
+The LeaguePred web application http://LeaguePred.net is now deprecated. Riot has made changes drastic to their naming conventions and the website has been taken down and has to be updated to be deployed again.
+
+## Images
+### Density plot of all champion winrates
+![image](https://github.com/jccoulson/match-prediction/assets/28967794/b82002b2-a6e1-4aae-b682-48458d0f4209)
+
+### t-SNE plot to visualize high dimensional feature space to predict win or loss in 2 dimensions
+![image](https://github.com/jccoulson/match-prediction/assets/28967794/fa74fad2-9bd7-47c1-bd38-7a07cb25081e)
+
+### Web application predicting game outcome for user
+![image](https://github.com/jccoulson/match-prediction/assets/28967794/638060a7-005c-48c2-abd3-311e8d14354c)
 
 
 ## Dependencies
@@ -46,3 +56,6 @@ Add api key to be able to run
 ## Run model creation
 
 - `python capstone_model.py`
+
+## Images
+
