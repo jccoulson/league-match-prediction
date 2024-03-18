@@ -7,7 +7,7 @@ This project predicts the outcome of a League of Legends game by analyzing playe
 - 3 csvs of cleaned data
 - Data Collection(`data_collection.py`)
   - Uses the RIOT API and web scraping via Python's Beautiful Soup, collects random game statistics and player data in those games and saves as csv
-- Data Cleaning and Exploratory Data Analysis(`league_eda.Rmd`)
+- Data Cleaning and Exploratory Data Analysis(`league_statistics_eda.Rmd`, `league_statistics_eda.pdf`)
   - Processes and cleans the collected data. Fills out missing values and does exploratory data analysis with visualizations. Outputs cleaned data to csv
 - Prediction Model (`league_model.py`)
   - Uses scikit-learn Random Forest algorithm and predicts outcome based on player statistics and features from the cleaned data
@@ -55,7 +55,5 @@ Add api key to be able to run
 
 ## Run model creation
 
-- `python capstone_model.py`
-
-## Images
+- `python league_model.py`
 
